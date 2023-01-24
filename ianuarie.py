@@ -1,6 +1,7 @@
 import discord
 from discord.errors import ClientException 
 from discord.ext import commands
+import random
 
 client = commands.Bot(command_prefix='*', intents=discord.Intents.all())
 
@@ -11,7 +12,12 @@ async def on_ready():
 
 @client.command()
 async def ping(ctx):
-    await ctx.send("Pong!")
+    bot_latency = round(client.latency * 1000)
+    await ctx.send(f"Pong! {bot_latency} ms.")
+
+@client.command()
+async def ily(ctx):
+    await ctx.send("I love Mara!")
 
 @client.command(name='version')
 async def version(context):
@@ -21,5 +27,13 @@ async def version(context):
     myEmbed.set_footer(text="This is a sample")
     myEmbed.set_author(name="Matrix")
     await context.message.channel.send(embed=myEmbed)
+
+@client.command(aliases=["8ball", "eight ball", "8 ball"])
+async def eightball(ctx, *, question):
+    with open("/amos/response.txt", "r") as f:
+        random_responses = f.readlines()
+        response = random.choice(random_responses)
+    
+    await ctx.send(response)
 
 client.run('OTEyMDU0NzQwMjExMzYzOTEw.YZqXKw.T0BxYv2wjgLCS2rVht8IF9K3_n4')
