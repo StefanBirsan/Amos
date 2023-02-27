@@ -67,11 +67,37 @@ async def purge(ctx, amount:int):
 
 @client.command()
 @commands.has_permissions(kick_members=True)
-async def kick(ctx, member:discord.Member, *, reason=None):
-    if reason == None:
-        reason="no reason provided"
+async def kick(ctx, member:discord.Member, *, modreason):
     await ctx.guild.kick(member)
-    await ctx.send(f"User {member.mention} has been kicked for {reason}")
+
+    conf_embed = discord.Embed(title="Success!", color= 0x5F57A9)
+    conf_embed.add_field(name="kicked:", value=f"{member.mention} has been kicked from the server by {ctx.author.mention}.", inline=False)
+    conf_embed.add_field(name="Reason:", value=modreason, inline=False)
+
+    await ctx.send(embed=conf_embed)
+
+@client.command()
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, modreason):
+    await ctx.guild.ban(member)
+
+    conf_embed = discord.Embed(title="Success!", color= 0x5F57A9)
+    conf_embed.add_field(name="Banned:", value=f"{member.mention} has been banned from the server by {ctx.author.mention}.", inline=False)
+    conf_embed.add_field(name="Reason:", value=modreason, inline=False)
+    
+    await ctx.send(embed=conf_embed)
+
+@client.command(name="unban")
+@commands.guild_only()
+@commands.has_permissions(ban_members=True)
+async def unban(ctx, userId):
+    user  = discord.Object(id=userId)
+    await ctx.guild.unban(user)
+
+    conf_embed = discord.Embed(title="Success!", color= 0x5F57A9)
+    conf_embed.add_field(name="Unbanned:", value=f"<@{userId}> has been unbanned from the server by {ctx.author.mention}.", inline=False)
+
+    await ctx.sent(embed=conf_embed)
 
 
 client.run('OTEyMDU0NzQwMjExMzYzOTEw.YZqXKw.T0BxYv2wjgLCS2rVht8IF9K3_n4')
