@@ -9,6 +9,7 @@ import json
 
 client = commands.Bot(command_prefix='*', intents=discord.Intents.all())
 
+client.remove_command("help")
 
 @client.event
 async def on_ready():
@@ -228,5 +229,14 @@ async def unmute_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Error: Missing argument. You must pass in a @ mention in order to run")
 
+@client.command()
+async def help(ctx):
+    help_embed = discord.Embed(title="Help desk for Amos", description="All commands in one place", color=0x5F57A9)
+
+    help_embed.set_author(name="Amos")
+    help_embed.add_field(name="Kick", value="I wonder this does.. hmm..", inline=False)
+    help_embed.set_footer(text=f"Requested by <@{ctx.author}>.", icon_url=ctx.author.avatar)
+
+    await ctx.send(embed=help_embed)
 
 client.run('OTEyMDU0NzQwMjExMzYzOTEw.YZqXKw.T0BxYv2wjgLCS2rVht8IF9K3_n4')
