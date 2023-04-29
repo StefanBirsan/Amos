@@ -1,9 +1,19 @@
 import discord
 from discord.errors import ClientException 
 from discord.ext import commands 
+from discord.utils import get
 import random
 import asyncio
 import json
+import aiohttp
+import rule34
+import urllib.request as u
+import xml.etree.ElementTree as et
+import discord.ui
+from PIL import Image
+import requests
+from emojify import emojify_image
+from typing import Union
 
 
 client = commands.Bot(command_prefix='*', intents=discord.Intents.all())
@@ -14,6 +24,13 @@ client.remove_command("help")
 async def on_ready():
     await client.change_presence(activity=discord.Streaming(name="Dumb shit", url="https://www.twitch.tv/spinigotilla"))
     print("bot is ready")
+
+@client.event
+async def on_raw_reaction_add(reaction):
+     if reaction.message_id == 1101572333430386688:
+          if str(reaction.emoji) == "👍":
+               verified_role = get(reaction.member.guild.roles, name="18+")
+               await reaction.member.add_roles(verified_role)
 
 #de aici incepe autorole-u
 
@@ -29,7 +46,7 @@ async def setautorole(ctx, role: discord.Role):
         json.dump(auto_role, f, indent=4)
     
     conf_embed = discord.Embed(title="Success!", color= 0x5F57A9)
-    conf_embed.add_field(name="Autrole has been set!", value=f"The mute role has been changed to '{role.mention}' for this guild. All members wil have automaticaly equipped this role .", inline=False)
+    conf_embed.add_field(name="Autrole has been set!", value=f"The role has been changed to '{role.mention}' for this guild. All members wil have automaticaly equipped this role .", inline=False)
 
     await ctx.send(embed=conf_embed)
 
@@ -105,14 +122,16 @@ async def ily(ctx, *, why):
 
 #version :D
 
-@client.command(name='version')
-async def version(context):
-    myEmbed = discord.Embed(title="Curent Version", description="The bot is in Version 1.0", color= 0x5F57A9)
-    myEmbed.add_field(name="Version Code:", value="v1.1.0", inline=False)
+@client.command(name='version', aliases = ['botversion', 'bversion'])
+async def version(ctx):
+    myEmbed = discord.Embed(title="Curent Version", description="The bot is in Version 1.6", color= 0x5F57A9,  timestamp= ctx.message.created_at)
+    myEmbed.add_field(name="Version Code:", value="v1.6.3", inline=False)
     myEmbed.add_field(name="Date released:", value="January 23, 2023", inline=False)
+    myEmbed.add_field(name="Current version date release:", value="April 29, 2023", inline=False)
     myEmbed.set_footer(text="This is a sample")
-    myEmbed.set_author(name="Matrix")
-    await context.message.channel.send(embed=myEmbed)
+    myEmbed.set_author(name="(Matrix)")
+    myEmbed.set_footer(text=f"Requested by @{ctx.author}.", icon_url=ctx.author.avatar)
+    await ctx.message.channel.send(embed=myEmbed)
 
 #math
 
@@ -152,6 +171,7 @@ async def purge(ctx, amount:int):
     msg = await ctx.send(f'{amount} messages were deleted. \n')
     await asyncio.sleep(3)
     await msg.delete()
+
 
 #error handling     
 
@@ -271,6 +291,7 @@ async def unmute_error(ctx, error):
     if isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Error: Missing argument. You must pass in a @ mention in order to run")
 
+
 #help command
 
 @client.command()
@@ -306,7 +327,7 @@ async def userinfo(ctx, member: discord.Member=None):
     info_embed.add_field(name="Discriminator: ", value=member.discriminator, inline=False)
     info_embed.add_field(name="ID: ", value=member.id, inline=False)
     info_embed.add_field(name=f"Roles ({len(roles)})  ", value=" ".join([role.mention for role in roles]))
-    info_embed.add_field(name="Top Role:  ", value=member.top_role.mention)
+    info_embed.add_field(name="Top Role:  ", value=member.top_role.mention, inline=False)
     info_embed.add_field(name="Joined at: ", value=member.joined_at.strftime("%a, %B %#d, %Y, %I:%M %p"))
     info_embed.add_field(name="Status: ", value=member.status, inline=False)
     
@@ -317,11 +338,17 @@ async def userinfo(ctx, member: discord.Member=None):
 async def serverinfo(ctx):
     embed = discord.Embed(title="Server info", description=f"Here's the info on the server, {ctx.guild.name}.", color= 0x5F57A9, timestamp= ctx.message.created_at)
     embed.set_thumbnail(url=ctx.guild.icon)
+    embed.add_field(name="Name", value= ctx.guild.name, inline=False)
+    embed.add_field(name="ID", value= ctx.guild.id, inline=False)
+    embed.add_field(name="Owner", value= ctx.guild.owner.mention, inline=False)
     embed.add_field(name="Members", value= ctx.guild.member_count)
     embed.add_field(name="Channels", value= f"{len(ctx.guild.text_channels)} text | {len(ctx.guild.voice_channels)} voice | {len(ctx.guild.stage_channels)} stages", inline=False)
-    embed.add_field(name="Owner", value= ctx.guild.owner.mention)
-    embed.add_field(name="Created at: " , value= ctx.guild.created_at.strftime("%a, %B %#d, %Y, %I:%M %p"), inline=False)
+    embed.add_field(name="Role Count", value= len(ctx.guild.roles), inline=False)
+    embed.add_field(name="Rules Channel", value= ctx.guild.rules_channel, inline=False)
     embed.add_field(name="Premium boosts: ", value= ctx.guild.premium_subscription_count)
+    embed.add_field(name="Booster Tier", value= ctx.guild.premium_tier, inline= False)
+    embed.add_field(name="Created at: " , value= ctx.guild.created_at.strftime("%a, %B %#d, %Y, %I:%M %p"), inline=False)
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url=ctx.author.avatar)
 
     await ctx.send(embed=embed)
 
@@ -335,6 +362,128 @@ async def serverinfo(ctx):
 #             await message.delete()
 #             await message.channel.send(f"{message.author.mention} You cannot say that word!")
 
+#meme command
+
+@client.command()
+async def meme(ctx):
+    async with aiohttp.ClientSession() as cd:
+        async with cd.get("https://www.reddit.com/r/memes.json") as r:
+            memes = await r.json()
+            embed = discord.Embed(color= 0x5F57A9)
+            embed.set_image(url=memes["data"]["children"][random.randint(0, 40)]["data"]["url"])
+            embed.set_footer(text=f"Meme send by {ctx.author}")
+
+            await ctx.send(embed = embed)
+
+@client.command()
+async def emojify(ctx, url: Union[discord.Member, str], size: int = 14):
+    if not isinstance(url, str):
+        url = url.display_avatar.url
+
+    def get_emojified_image():
+        r = requests.get(url, stream=True)
+        image = Image.open(r.raw).convert("RGB")
+        res = emojify_image(image, size)
+
+        if size > 14:
+            res = f"```{res}```"
+        return res
+
+    result = await client.loop.run_in_executor(None, get_emojified_image)
+    await ctx.send(result)
+
+#cat command
+
+@client.command()
+async def cat(ctx):
+    async with aiohttp.ClientSession() as cd:
+        async with cd.get("https://www.reddit.com/r/cats.json") as r:
+            memes = await r.json()
+            embed = discord.Embed(color= 0x5F57A9)
+            embed.set_image(url=memes["data"]["children"][random.randint(0, 40)]["data"]["url"])
+            embed.set_footer(text=f"Meme send by {ctx.author}")
+
+            await ctx.send(embed = embed)
+
+#horny command
+
+r = rule34.Rule34
+def xmlparse(str):
+	root = et.parse(u.urlopen(str))
+	for i in root.iter('post'):
+		fileurl = i.attrib['file_url']
+		return fileurl
+def xmlcount(str):
+	root = et.parse(u.urlopen(str))
+	for i in root.iter('posts'):
+		count = i.attrib['count']
+		return count
+def pidfix(str):
+	ye = int(xmlcount(r.urlGen(tags=str,limit=1)))
+	ye = ye - 1
+	return ye
+def rdl(str,int):
+	
+
+	if int > 2000:
+		int = 2000
+	if int == 0:
+		int == 0
+		
+	elif int != 0:	
+		int = random.randint(1,int)
+	
+	xurl = r.urlGen(tags=str,limit=1,PID=int)
+	print(xurl)
+	wr = xmlparse(xurl)
+	
+	if 'webm' in wr:
+		if 'sound' not in str:
+			if 'webm' not in str:
+				
+				wr = rdl(str,pidfix(str))
+		else:
+			pass
+	elif 'webm' not in wr:
+		print('pateu')
+	return wr
+
+@client.command()
+async def pl(ctx, * ,arg):
+	answer = ''
+	# this is inefficent but also the only way i can do this
+	arg = str(arg)
+	arg = arg.replace(',','')
+	arg = arg.replace('(','')
+	arg = arg.replace(')','')
+	arg = arg.replace("'",'')
+	
+	waitone = await ctx.send("***:desktop: We're polling Rule34! Please wait a few seconds.***")
+	newint = pidfix(arg)
+	if newint > 2000:
+		newint = 2000
+		answer = rdl(arg,random.randint(1,newint))
+	if newint > 1:
+
+		answer = rdl(arg,random.randint(1,newint))
+	elif newint < 1:
+		if newint == 0:
+			answer = rdl(arg,0)
+		elif newint != 0:
+			answer = rdl(arg,1)
+   
+	if 'webm' in answer:
+		await waitone.delete
+		await ctx.send(answer)
+	elif 'webm' not in answer:
+		embed = discord.Embed(title=f'Rule34: {arg}',color=ctx.author.color)
+		embed.set_author(name=f'{ctx.author.display_name}')
+		embed.set_thumbnail(url='https://rule34.paheal.net/themes/rule34v2/rule34_logo_top.png')
+		embed.set_image(url=f'{answer}')
+		waitone.delete
+		await ctx.send(embed = embed)
+
+#crypto
 
 @client.command()
 async def balance(ctx, member: discord.Member=None):
@@ -348,14 +497,16 @@ async def balance(ctx, member: discord.Member=None):
     
     if str(member.id) not in user_eco:
 
-        user_eco[str(member.id)] = {}
-        user_eco[str(member.id)]["Balance"] = 100
+        user_eco[str(ctx.author.id)] = {}
+        user_eco[str(ctx.author.id)]["Balance"] = 100
+        user_eco[str(ctx.author.id)]["Deposited"] = 0
 
         with open("/bot/pateu/eco.json", "w") as f:
             json.dump(user_eco, f, indent=4)
 
     eco_embed = discord.Embed(title=f"{member.name}'s current balance", description="The curent balance of this user.", color= 0x5F57A9)
-    eco_embed.add_field(name="Current balance:", value=f"${user_eco[str(member.id)]['Balance']}.")
+    eco_embed.add_field(name="Current balance:", value=f"${user_eco[str(member.id)]['Balance']}.", inline= False)
+    eco_embed.add_field(name="Bank Balance:", value=f"${user_eco[str(member.id)]['Deposited']}.")
     eco_embed.set_footer(text="Want to increase balance? Try running some economy based commands!", icon_url=None)
 
     await ctx.send(embed=eco_embed)
@@ -367,9 +518,9 @@ async def begg(ctx):
         user_eco = json.load(f)
     
     if str(ctx.author.id) not in user_eco:
-
         user_eco[str(ctx.author.id)] = {}
         user_eco[str(ctx.author.id)]["Balance"] = 100
+        user_eco[str(ctx.author.id)]["Deposited"] = 0
 
         with open("/bot/pateu/eco.json", "w") as f:
             json.dump(user_eco, f, indent=4)
@@ -411,5 +562,167 @@ async def begg(ctx):
         eco_embed.set_footer(text="Want more? Try some other commands too!")
         await ctx.send(embed=eco_embed)
 
+@commands.cooldown(1, per=3600)
+@client.command()
+async def work(ctx):
+     with open("/bot/pateu/eco.json", "r") as f:
+        user_eco = json.load(f)
+
+     if str(ctx.author.id) not in user_eco:
+          
+          user_eco[str(ctx.author.id)] = {}
+          user_eco[str(ctx.author.id)]["Balance"] = 100
+          user_eco[str(ctx.author.id)]["Deposited"] = 0
+
+          with open("/bot/pateu/eco.json", "w") as f:
+            json.dump(user_eco, f , indent=4)
+    
+     amount = random.randint(100, 300)
+     user_eco[str(ctx.author.id)]["Balance"] += amount
+
+     eco_embed = discord.Embed(title="Phew!", description="After a tiring shift, here is what you earned!", color= 0x5F57A9)
+     eco_embed.add_field(name="Earnings:", value=f"${amount}", inline=False)
+     eco_embed.add_field(name="New Balance:", value=f"${user_eco[str(ctx.author.id)]['Balance']}.")
+     eco_embed.set_footer(text="Want more? wait 1 hour to run this command again, or try some others!", icon_url=None)
+     
+     await ctx.send(embed=eco_embed)
+     
+     with open("/bot/pateu/eco.json", "w") as f:
+            json.dump(user_eco, f , indent=4)
+
+@work.error
+async def work_error(ctx, error):
+    if isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Error: You have to wait 1 hour.")
+
+@client.command()
+async def steal(ctx, member: discord.Member):
+     with open("/bot/pateu/eco.json", "r") as f:
+            user_eco = json.load(f)
+     
+     steal_probability = random.randint(0, 1)
+
+     if steal_probability == 1:
+          amount = random.randint(1, 100)
+
+          if str(ctx.author.id) not in user_eco:
+               
+               if str(ctx.author.id) not in user_eco:
+                 user_eco[str(ctx.author.id)] = {}
+                 user_eco[str(ctx.author.id)]["Balance"] = 100
+                 user_eco[str(ctx.author.id)]["Deposited"] = 0
+
+               with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+
+          elif str(member.id) not in user_eco:
+               user_eco[str(ctx.author.id)] = {}
+               user_eco[str(ctx.author.id)]["Balance"] = 100
+
+               with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+          
+          user_eco[str(ctx.author.id)]["Balance"] += amount
+          user_eco[str(member.id)]["Balance"] -= amount
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+          
+          await ctx.send(f"{ctx.author.mention}, You have stolen ${amount} from {member.mention}! Be sure to keep it safe!")
+     
+     elif steal_probability  == 0:
+          await ctx.send("Uh oh.. You did not get to steal from this user.")
+
+@client.command(aliases=["bank"])
+async def deposit(ctx, amount: int):
+     with open("/bot/pateu/eco.json", "r") as f:
+        user_eco = json.load(f)
+     
+     if str(ctx.author.id) not in user_eco:
+          user_eco[str(ctx.author.id)] = {}
+          user_eco[str(ctx.author.id)]["Balance"] = 100
+          user_eco[str(ctx.author.id)]["Deposited"] = 0
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+     
+     if amount > user_eco[str(ctx.author.id)]["Balance"]:
+          await ctx.send("Cannot deposit this amount because your balance does not have the sufficient fonds.")
+     else:
+          user_eco[str(ctx.author.id)]["Deposited"] += amount
+          user_eco[str(ctx.author.id)]["Balance"] -= amount
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+          
+          await ctx.send(f"You have deposited ${amount} into your bank. This money is now safe and only you can touch it.")
+
+@client.command(aliases=["wd"])
+async def withdrawl(ctx, amount: int):
+     with open("/bot/pateu/eco.json", "r") as f:
+        user_eco = json.load(f)
+     
+     if str(ctx.author.id) not in user_eco:
+          user_eco[str(ctx.author.id)] = {}
+          user_eco[str(ctx.author.id)]["Balance"] = 100
+          user_eco[str(ctx.author.id)]["Deposited"] = 0
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+     
+     if amount > user_eco[str(ctx.author.id)]["Deposited"]:
+          await ctx.send("Cannot withdrawl this amount because your bank does not have it.")
+     else:
+          user_eco[str(ctx.author.id)]["Deposited"] -= amount
+          user_eco[str(ctx.author.id)]["Balance"] += amount
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+          
+          await ctx.send(f"You have withdrawn ${amount} into your bank. The money is no longer safe.")
+
+@client.command(aliases=["flip"])
+async def coinflip(ctx, amount: int, choice=None):
+     with open("/bot/pateu/eco.json", "r") as f:
+        user_eco = json.load(f)
+     
+     if str(ctx.author.id) not in user_eco:
+          user_eco[str(ctx.author.id)] = {}
+          user_eco[str(ctx.author.id)]["Balance"] = 100
+          user_eco[str(ctx.author.id)]["Deposited"] = 0
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+
+     if choice == None or choice != 'heads' and choice != 'tails':
+          await ctx.send("Please enter a valid choice!")
+          return
+     computer_choice = random.randint(1, 2)
+     if computer_choice == 1 and choice == 'heads':
+          amount = (amount * 2 + 90) // 3
+          user_eco[str(ctx.author.id)]["Balance"] += amount
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+
+          await ctx.send(f"You won ${amount}! The coin landed on **HEADS**")
+
+     elif computer_choice == 2 and choice == 'tails':
+          amount = (amount * 2 + 90) // 3
+          user_eco[str(ctx.author.id)]["Balance"] += amount 
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+
+          await ctx.send(f"You won ${amount}! The coin landed on **TAILS**")       
+     else:
+          if computer_choice == 1:
+               choice = 'HEADS'
+          else:
+               choice = 'TAILS'
+          user_eco[str(ctx.author.id)]["Balance"] -= amount
+
+          with open("/bot/pateu/eco.json", "w") as f:
+                 json.dump(user_eco, f , indent=4)
+
+          await ctx.send(f"You lost {amount}.. The coin landed on **{choice}**")            
 
 client.run('OTEyMDU0NzQwMjExMzYzOTEw.GHIEW4.oEiNFn7_fpxK0-aSUo3KeZfwEePOuxiXCjmuyM')
