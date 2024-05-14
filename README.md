@@ -1,7 +1,6 @@
 # Amos: Your Versatile Discord Companion
 
-![amos](https://user-images.githubusercontent.com/83671730/235306338-0775e9f9-b2dd-49dc-a83c-0d848d8983dc.png) ![200px](https://user-images.githubusercontent.com/83671730/235306338-0775e9" width="200")
-
+![amos](https://user-images.githubusercontent.com/83671730/235306338-0775e9f9-b2dd-49dc-a83c-0d848d8983dc.png) 
 Whether you're a seasoned Guild moderator seeking efficient tools or a casual user looking for a fun and helpful companion, Amos has something for you.
 
 ## Features
