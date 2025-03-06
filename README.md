@@ -2,15 +2,21 @@
 
 Whether you're a seasoned Guild moderator seeking efficient tools or a casual user looking for a fun and helpful companion, Amos has something for you.
 
+## 🚀 Why Choose Amos?
 
-### Beyond the Basics
-- **Highly Customizable:** Amos can be tailored to your specific needs and preferences.
-- **Continuously Evolving:** New features and functionalities are regularly added to enhance your experience.
-- **User-Friendly Interface:** Seamlessly integrate Amos into your Discord server for effortless use.
+- 🔧 Moderation Powerhouse
 
-## Commands
+- Keep your server safe and organized with a suite of powerful moderation commands.
 
-### Moderation
+- 🎭 Beyond the Basics
+
+- 🔧 Customizable: Tailor Amos to suit your specific needs.
+
+- 🎯 User-Friendly: Designed for seamless integration and ease of use
+
+## 🛠️ Commands
+
+### 🔨 Moderation
 - `/ban [user] [reason]` - Bans a user from the server.
 - `/kick [user] [reason]` - Kicks a user from the server.
 - `/mute [user] [time]` - Mutes a user for a specified duration.
@@ -19,7 +25,7 @@ Whether you're a seasoned Guild moderator seeking efficient tools or a casual us
 - `/setmuterole [role]` - Sets a role for the mutes users.
 - `/purge [number]` - Deletes a specified number of messages in a channel.
 
-### Fun & Utility
+### 🎲 Fun & Utility
 - `/roll [dice]` - Rolls dice in the format `d[format of the dice]`.
 - `/8ball [question]` - Provides a random response to a yes/no question.
 - `/poll [question] [options]` - Creates a quick poll.
@@ -36,12 +42,12 @@ Whether you're a seasoned Guild moderator seeking efficient tools or a casual us
 - `/withdrawl [amount]` - Withdraw money from the guild bank.
 - `/coinflip [heads/tails]` - Play a minigame using ur guild money.
 
-### Information
+### 📢 Information
 - `/help` - Displays a list of available commands based on permissions.
 - `/serverinfo` - Shows information about the server.
 - `/userinfo [user]` - Displays details about a specific user.
 
-## Getting Started
+## 🚀 Getting Started
 
 1. **Invite Amos:** Easily invite Amos to your Discord server using the provided invitation link.
 2. **Familiarize Yourself:** Explore the available commands and their functionalities. Amos supports a growing list of commands, so be sure to stay updated!
